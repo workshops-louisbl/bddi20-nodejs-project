@@ -15,6 +15,29 @@ const jsonParser = new Transform({
   }
 })
 
+const textExtractor = new Transform({
+  writableObjectMode: true,
+
+  transform(chunk, _, callback) {
+    const text = chunk?.data?.text + ""
+
+    this.push(text)
+
+    callback()
+  }
+})
+
+const tweetCounter = new Transform({
+  transform(chunk, _, callback) {
+    this.counter++
+
+    this.push(this.counter.toString())
+
+    callback()
+  }
+})
+tweetCounter.counter = 0
+
 const logger = new Writable({
   objectMode: true,
   write(chunk, encoding, callback) {
@@ -29,5 +52,7 @@ const logger = new Writable({
 
 module.exports = {
   jsonParser,
+  textExtractor,
+  tweetCounter,
   logger
 }

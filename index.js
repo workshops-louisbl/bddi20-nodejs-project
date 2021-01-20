@@ -1,9 +1,9 @@
 require("dotenv").config()
-const { pipeline } = require("stream")
+const { pipeline, Writable } = require("stream")
 const WebSocket = require("ws")
 const server = require("./server")
-const {connectToTwitter, tweetStream} = require("./twitter")
-const {jsonParser, logger} = require("./process-tweets")
+const {setSearchRules, connectToTwitter, tweetStream} = require("./twitter")
+const {jsonParser, logger, textExtractor, tweetCounter} = require("./process-tweets")
 
 // server http
 server.listen(3000)
@@ -18,31 +18,29 @@ wsServer.on("connection", (client) => {
     client.send("Hello from server")
   })
 
-  tweetStream.on("data", (chunk) => {
-    client.send(chunk)
-  })
+  // envoyer des données au client via websocket
+  const socketStream = WebSocket.createWebSocketStream(client);
+  pipeline(
+    tweetStream,
+    // jsonParser,
+    // textExtractor,
+    socketStream,
+    (err) => {
+      if (err) {
+        console.error("pipeline error: ", err)
+      } else {
+        console.log("pipeline success")
+      }
+    }
+  )
 })
 
 
 // connexion API Twitter
 connectToTwitter()
 
-// traiter les tweets (via transform)
-// pipeline(
-//   tweetStream,
-//   jsonParser,
-//   logger,
-//   (err) => {
-//     if (err) {
-//       console.error("pipeline error: ", err)
-//     } else {
-//       console.log("pipeline success")
-//     }
-//   }
-// )
-  
-  // envoyer des données au client via websocket
-  // const wsServer = new WebSocket.Server({
-    // server
-    // })
-    
+// règles de filtrage pour tweets
+setSearchRules([
+  { value: "cat has:images", tag: "cat pictures"},
+  { value: "koala has:images", tag: "koala pictures"}
+])
