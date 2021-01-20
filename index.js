@@ -1,3 +1,4 @@
+require("dotenv").config()
 const { pipeline } = require("stream")
 const server = require("./server")
 const {connectToTwitter, tweetStream} = require("./twitter")

@@ -3,7 +3,7 @@ const { Writable, Readable, pipeline, Transform } = require("stream")
 
 const TWT_API_HOST = "api.twitter.com"
 const TWT_API_PATH = "/2/tweets/sample/stream?tweet.fields=attachments,author_id,geo&expansions=author_id,attachments.media_keys&media.fields=url"
-const BEARER_TOKEN = ""
+const BEARER_TOKEN = process.env.TWT_BEARER_TOKEN
 
 const options = {
   host: TWT_API_HOST,
