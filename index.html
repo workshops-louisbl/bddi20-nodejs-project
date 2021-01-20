@@ -2,6 +2,20 @@
   <head>
     <script>
       console.log("dans le navigateur")
+      const socket = new WebSocket(`ws://${window.location.hostname}:${window.location.port}`);
+
+      socket.addEventListener("message", async function (event) {
+        const data = await event.data.text()
+        
+        console.log("message from server: ", data)
+      })
+
+      socket.addEventListener('open', function (event) {
+        console.log("connected", event);
+        
+        socket.send("Hello from client")
+      });
+
     </script>
   </head>
   <body>
