@@ -34,6 +34,10 @@ wsServer.on("connection", (client) => {
       }
     }
   )
+
+  socketStream.on("close", () => {
+    socketStream.destroy()
+  })
 })
 
 // connexion API Twitter
