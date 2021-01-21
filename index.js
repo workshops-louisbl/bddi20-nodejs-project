@@ -4,11 +4,18 @@ const WebSocket = require("ws")
 const server = require("./server")
 const {addSearchRules, getSearchRules, deleteSearchRules} = require("./search-rules")
 const {connectToTwitter, tweetStream} = require("./twitter")
-const {jsonParser, logger, textExtractor, tweetCounter} = require("./process-tweets")
+const {jsonParser, logger, textExtractor, tweetCounter, getTweetFromSource} = require("./process-tweets")
 
 // server http
 server.listen(3000)
 const wsServer = new WebSocket.Server({ server })
+
+// create a passthrough: a transform that does nothing, just passing data through
+const broadcaster = new PassThrough({
+  writableObjectMode: true,
+  readableObjectMode: true
+})
+
 
 wsServer.on("connection", (client) => {
   console.log("new connection: ")
@@ -19,12 +26,14 @@ wsServer.on("connection", (client) => {
     client.send("Hello from server")
   })
 
+  // create a new readable stream of tweets for this client
+  const tweetSource = getTweetFromSource(broadcaster)
+  
   // envoyer des données au client via websocket
   const socketStream = WebSocket.createWebSocketStream(client);
   pipeline(
-    tweetStream,
-    // jsonParser,
-    // textExtractor,
+    tweetSource,
+    // add here what transform you want for this specific client
     socketStream,
     (err) => {
       if (err) {
@@ -36,12 +45,29 @@ wsServer.on("connection", (client) => {
   )
 
   socketStream.on("close", () => {
-    socketStream.destroy()
+    socketStream.destroy() // destroy socketStream to terminate client pipeline
   })
 })
 
 // connexion API Twitter
 connectToTwitter()
+
+// main pipeline, ending with broadcaster passthrough stream
+pipeline(
+  tweetStream,
+  jsonParser,
+  // add here what transform you want for ALL clients
+  // remember to set objectMode when needed
+  broadcaster,
+  (err) => {
+    console.log("main pipeline ended")
+    if (err) {
+      console.error("main pipeline error: ", err)
+    }
+    console.log(tweetStream)
+  }
+)
+
 
 // vider puis ajouter les filtres
 async function resetRules() {
